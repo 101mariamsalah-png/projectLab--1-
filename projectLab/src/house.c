@@ -26,9 +26,10 @@
  *   - Nothing in this file prints anything. Printing is render.c's job.
  *
  * Smart Home Console · Day 03 midterm — G9
- * Student: <YOUR NAME HERE>
+ * Student: <mariam salah>
  */
 #include "house.h"
+#include <string.h>
 
 /* ---------------- module-private data (NFR-03) ---------------
  * GIVEN. The array is static, so nothing outside this file can reach it.
@@ -78,8 +79,21 @@ void houseInit(void)
     static const uint16_t SEED_ADC[ROOM_COUNT] = { 51U, 64U, 45U, 58U, 49U, 96U };
     static const uint8_t  SEED_OCC[ROOM_COUNT] = { 1U, 0U, 0U, 0U, 1U, 0U };
 
-    /* TODO: the loop described above. */
-    (void)NAMES; (void)SEED_ADC; (void)SEED_OCC;   /* delete these */
+    for (uint8_t i = 0; i < ROOM_COUNT; i++)
+    {
+        strncpy(house[i].name, NAMES[i], NAME_LEN - 1);
+        house[i].name[NAME_LEN - 1] = '\0';
+
+        house[i].adc = SEED_ADC[i];
+
+        house[i].status = 0;
+        SET_BIT(house[i].status, BIT_AUTO);
+
+        if (SEED_OCC[i]) 
+        {
+            SET_BIT(house[i].status, BIT_OCCUPIED);
+        }
+    }
 }
 
 

@@ -12,8 +12,8 @@ menu actions that let a person change it.
 
 | Field | Your answer |
 |-------|-------------|
-| **Full name** | |
-| **Email** | |
+| **Full name** |mariam salah  |
+| **Email** | 101mariamsalah@gmail.com|
 | **Group** | G9 |
 | **Date started** | 02-09-2026|
 | **Date submitted** | 03-09-2026|
