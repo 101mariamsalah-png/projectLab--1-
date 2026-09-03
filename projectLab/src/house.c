@@ -123,8 +123,7 @@ void houseInit(void)
  */
 uint16_t tempC(uint16_t adc)
 {
-    (void)adc;      /* delete this line */
-    return 0U;      /* TODO */
+    return (uint16_t)(((uint32_t)adc * 500) / 1024);
 }
 
 
@@ -167,8 +166,47 @@ uint16_t tempC(uint16_t adc)
  */
 uint8_t applyRules(Room_t *r)
 {
-    (void)r;        /* delete this line */
-    return 0U;      /* TODO */
+    // 1. Check AUTO bit first (Early Exit)
+    if (!READ_BIT(r->status, BIT_AUTO))
+    {
+        return 0;
+    }
+
+    // 2. Save old status to detect changes at the end
+    uint8_t old_status = r->status;
+
+    // R1: Light follows people
+    if (READ_BIT(r->status, BIT_OCCUPIED))
+    {
+        SET_BIT(r->status, BIT_LAMP);
+    }
+    else
+    {
+        CLR_BIT(r->status, BIT_LAMP);
+    }
+
+    // R2: Fan follows heat
+    if (tempC(r->adc) >= TEMP_HOT)
+    {
+        SET_BIT(r->status, BIT_FAN);
+    }
+    else
+    {
+        CLR_BIT(r->status, BIT_FAN);
+    }
+
+    // R3: Overheat overrides R1 (Must run LAST)
+    if (tempC(r->adc) >= TEMP_ALARM)
+    {
+        SET_BIT(r->status, BIT_ALARM);
+        SET_BIT(r->status, BIT_LAMP);
+    }
+    else
+    {
+        CLR_BIT(r->status, BIT_ALARM);
+    }
+    /* Return 1 if status changed, 0 if not. */
+    return (r->status != old_status) ? 1 : 0;
 }
 
 
@@ -193,7 +231,14 @@ uint8_t applyRules(Room_t *r)
  */
 uint8_t rulesPass(void)
 {
-    return 0U;      /* TODO */
+    uint8_t changes = 0;
+
+    for (int i = 0; i < ROOM_COUNT; i++)
+    {
+        changes += applyRules(&house[i]);
+    }
+
+    return changes;
 }
 
 
@@ -211,8 +256,17 @@ uint8_t rulesPass(void)
  */
 uint8_t countRoomsWith(uint8_t bit)
 {
-    (void)bit;      /* delete this line */
-    return 0U;      /* TODO */
+    uint8_t count = 0;
+
+    for (int i = 0; i < ROOM_COUNT; i++)
+    {
+        if (READ_BIT(house[i].status, bit))
+        {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 
@@ -240,7 +294,14 @@ uint8_t countRoomsWith(uint8_t bit)
  *                 = 64       + (51       + 0)            = 115
  */
 uint32_t sumAdc(const Room_t *rooms, uint8_t n)
+
 {
-    (void)rooms; (void)n;   /* delete this line */
-    return 0UL;             /* TODO */
+    if (n == 0)
+    {
+        return 0;
+    }
+    
+    return rooms[n - 1].adc + sumAdc(rooms, n - 1);
 }
+
+
