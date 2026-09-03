@@ -29,122 +29,91 @@
 #include "ui.h"
 #include "house.h"
 #include "render.h"
-#include "platform.h"
+    #include "platform.h"
 
-/* ============================================================================
- *                            GIVEN — read these
- * ========================================================================== */
-
-void printMenu(void)
-{
-    /* two fixed-width columns, so the numbers line up under each other */
-    printf("\n  %s1%s) %-26s%s2%s) %s\n", CC(C_SEL), CC(C_RESET),
-           "Show the house", CC(C_SEL), CC(C_RESET), "Switch lamp/fan/auto");
-    printf("  %s3%s) %-26s%s4%s) %s\n", CC(C_SEL), CC(C_RESET),
-           "Someone enters/leaves", CC(C_SEL), CC(C_RESET), "Set room temperature");
-    printf("  %s5%s) %-26s%s6%s) %s\n", CC(C_SEL), CC(C_RESET),
-           "Run automation", CC(C_SEL), CC(C_RESET), "House report");
-    printf("  %s7%s) %-26s%s0%s) %s\n", CC(C_SEL), CC(C_RESET),
-           "Auto demo (scripted)", CC(C_SEL), CC(C_RESET), "Exit");
-    printf("\n  Select > ");
-    fflush(stdout);
-}
-
-/* Read one whole line, then parse an int out of it. Returns 0 on EOF or on
- * junk like "hello". Reading a LINE at a time means the buffer is never left
- * dirty, so the "press Enter" pause below actually waits. */
-int readInt(int *out)
-{
-    char buf[64];
-    if (fgets(buf, (int)sizeof buf, stdin) == NULL) { return 0; }
-    return sscanf(buf, "%d", out) == 1;
-}
-
-void pauseKey(void)
-{
-    char buf[64];
-    if (g_plain) { return; }
-    printf("\n%s  -- press Enter --%s", CC(C_DIM), CC(C_RESET));
-    fflush(stdout);
-    if (fgets(buf, (int)sizeof buf, stdin) == NULL) { /* EOF: carry on */ }
-}
-
-void printBinary(uint8_t value)
-{
-    printf("0b");
-    for (int8_t bit = 7; bit >= 0; bit--) {
-        putchar(READ_BIT(value, bit) ? '1' : '0');
+    void printMenu(void)
+    {
+        printf("\n  %s1%s) %-26s%s2%s) %s\n", CC(C_SEL), CC(C_RESET),
+               "Show the house", CC(C_SEL), CC(C_RESET), "Switch lamp/fan/auto");
+        printf("  %s3%s) %-26s%s4%s) %s\n", CC(C_SEL), CC(C_RESET),
+               "Someone enters/leaves", CC(C_SEL), CC(C_RESET), "Set room temperature");
+        printf("  %s5%s) %-26s%s6%s) %s\n", CC(C_SEL), CC(C_RESET),
+               "Run automation", CC(C_SEL), CC(C_RESET), "House report");
+        printf("  %s7%s) %-26s%s0%s) %s\n", CC(C_SEL), CC(C_RESET),
+               "Auto demo (scripted)", CC(C_SEL), CC(C_RESET), "Exit");
+        printf("\n  Select > ");
+        fflush(stdout);
     }
-}
 
-/* THE VALIDATION TEMPLATE. Ask for a room index, reject anything that is not
- * 0..ROOM_COUNT-1, and return 255 to mean "bad input, do nothing".
- * Every one of your functions below starts with this same shape. */
-uint8_t pickRoom(void)
-{
-    int n = -1;
-
-    printf("  Room (");
-    for (uint8_t i = 0U; i < ROOM_COUNT; i++) {
-        printf("%s%u%s=%s ", CC(C_SEL), i, CC(C_RESET), houseRoom(i)->name);
+    int readInt(int *out)
+    {
+        char buffer[64];
+        if (fgets(buffer, (int)sizeof buffer, stdin) == NULL) { return 0; }
+        return sscanf(buffer, "%d", out) == 1;
     }
-    printf("): ");
 
-    if (!readInt(&n) || n < 0 || n >= (int)ROOM_COUNT) {
-        statusSet(C_ALARM, "No such room.");
-        return 255U;
+    void pauseKey(void)
+    {
+        char buffer[64];
+        if (g_plain) { return; }
+        printf("\n%s  -- press Enter --%s", CC(C_DIM), CC(C_RESET));
+        fflush(stdout);
+        if (fgets(buffer, (int)sizeof buffer, stdin) == NULL) { }
     }
-    return (uint8_t)n;
-}
 
-/* ============================================================================
- *                              YOUR WORK
- *
- * Useful calls you already have:
- *   pickRoom()                    -> room index, or 255 on bad input
- *   houseRoom(i)                  -> Room_t * for room i
- *   tempC(r->adc)                 -> that room's temperature in C
- *   statusSet(COLOUR, "fmt", ...) -> the message line under the schematic
- *                                    (works exactly like printf)
- *   render(i)                     -> redraw, with room i's border glowing;
- *                                    pass -1 to highlight nothing
- *   pauseKey()                    -> "press Enter", so output can be read
- *   printBinary(byte)             -> prints 0b00001011
- *   drawBar(v, full, width, col)  -> the bar renderer, from render.h
- *
- * Colours for statusSet: C_OK (green), C_ALARM (red), C_WARM (amber),
- * C_COOL (blue), C_LAMP (yellow), C_FAN (cyan), C_DIM (grey), C_AUTO, C_MAN.
- * ========================================================================== */
+    void printBinary(uint8_t value)
+    {
+        printf("0b");
+        for (int8_t bit = 7; bit >= 0; bit--) {
+            putchar(READ_BIT(value, bit) ? '1' : '0');
+        }
+    }
 
+    uint8_t pickRoom(void)
+    {
+        int n = -1;
+        printf("  Room (");
+        for (uint8_t i = 0U; i < ROOM_COUNT; i++) {
+            printf("%s%u%s=%s ", CC(C_SEL), i, CC(C_RESET), houseRoom(i)->name);
+        }
+        printf("): ");
+        if (!readInt(&n) || n < 0 || n >= (int)ROOM_COUNT) {
+            statusSet(C_ALARM, "No such room.");
+            return 255U;
+        }
+        return (uint8_t)n;
+    }
 
-/* ==========================================================================
- *  [ 1 / 5 ]   YOUR WORK HERE  —  setOccupancy()                     FR-08
- * --------------------------------------------------------------------------
- *  REQUIRES : house.c [ 1 / 6 ] houseInit(), so the rooms have names.
- *  GIVES    : menu 3 works — "people: yes/no" flips on the schematic.
- *  USES     : pickRoom(), houseRoom(), TOGGLE_BIT, BIT_OCCUPIED,
- *             READ_BIT, statusSet(), render(), pauseKey()
- *  CHECK    : menu 3, pick Kitchen, its people line flips. The LAMP must
- *             NOT move — only the sensor bit changed.
- * ==========================================================================
- *
- * Somebody walks in or out. The shortest function in the file — do it first
- * to get the shape into your fingers.
- *
- *   1. i = pickRoom(); if it is 255, return immediately
- *   2. TOGGLE_BIT the OCCUPIED flag of that room
- *   3. statusSet() a message saying who is in the room now
- *   4. render((int)i) then pauseKey()
- *
- * NOTE: this changes the SENSOR bit and nothing else. The lamp does not move
- * until the rules run. That distinction is the whole point of the project —
- * do not "helpfully" turn the lamp on in here.
- */
 void setOccupancy(void)
 {
-    printf("  TODO setOccupancy\n");
-}
+    uint8_t i = pickRoom();
+    if (i == 255U)
+    {
+        return;
+    }
 
+    printf("Occupancy (0=empty 1=occupied): ");
+    int occupied = -1;
+    if (!readInt(&occupied) || (occupied != 0 && occupied != 1))
+    {
+        statusSet(C_ALARM, "Invalid occupancy value");
+        return;
+    }
+
+    if (occupied)
+    {
+        SET_BIT(houseRoom(i)->status, BIT_OCCUPIED);
+        statusSet(C_OK, "%s: Occupied", houseRoom(i)->name);
+    }
+    else
+    {
+        CLR_BIT(houseRoom(i)->status, BIT_OCCUPIED);
+        statusSet(C_OK, "%s: Empty", houseRoom(i)->name);
+    }
+
+    render((int)i);
+    pauseKey();
+}
 
 /* ==========================================================================
  *  [ 2 / 5 ]   YOUR WORK HERE  —  setTemperature()                   FR-09
@@ -173,8 +142,36 @@ void setOccupancy(void)
  */
 void setTemperature(void)
 {
-    printf("  TODO setTemperature\n");
+    uint8_t i = pickRoom();
+    if (i == 255)
+    {
+        return;
+    }
+
+    printf("Raw ADC reading (0..1023): ");
+    int val = -1;
+    if (!readInt(&val))
+    {
+        statusSet(C_ALARM, "Invalid ADC value");
+        return;
+    }
+
+    if (val < 0 || val > ADC_MAX)
+    {
+        statusSet(C_ALARM, "Invalid ADC value");
+        return;
+    }
+
+    uint16_t adc = (uint16_t)val;
+    houseRoom(i)->adc = adc;
+    uint16_t degC = tempC(adc);
+
+    statusSet(C_OK, "%s: ADC %u -> %u C", houseRoom(i)->name, adc, degC);
+
+    render((int)i);
+    pauseKey();
 }
+
 
 
 /* ==========================================================================
@@ -210,7 +207,49 @@ void setTemperature(void)
  */
 void switchDevice(void)
 {
-    printf("  TODO switchDevice\n");
+    uint8_t i = pickRoom();
+    if (i == 255)
+    {
+        return;
+    }
+
+    printf("Switch (1-Lamp 2-Fan 3-Auto mode): ");
+    int choice = 0;
+    if (!readInt(&choice))
+    {
+        statusSet(C_ALARM, "Nothing switched.");
+        return;
+    }
+
+    switch (choice)
+    {
+        case 1:
+            TOGGLE_BIT(houseRoom(i)->status, BIT_LAMP);
+            CLR_BIT(houseRoom(i)->status, BIT_AUTO);
+            statusSet(C_LAMP, "%s: Lamp switched", houseRoom(i)->name);
+            break;
+
+        case 2:
+            TOGGLE_BIT(houseRoom(i)->status, BIT_FAN);
+            CLR_BIT(houseRoom(i)->status, BIT_AUTO);
+            statusSet(C_FAN, "%s: Fan switched", houseRoom(i)->name);
+            break;
+
+        case 3:
+            TOGGLE_BIT(houseRoom(i)->status, BIT_AUTO);
+            statusSet(C_AUTO, "%s: Auto mode toggled", houseRoom(i)->name);
+            break;
+
+        default:
+            statusSet(C_ALARM, "Nothing switched.");
+            return;
+    }
+
+    render((int)i);
+    printf("%s status = ", houseRoom(i)->name);
+    printBinary(houseRoom(i)->status);
+    printf(" (0x%02X)\n", houseRoom(i)->status);
+    pauseKey();
 }
 
 
@@ -244,7 +283,55 @@ void switchDevice(void)
  */
 void houseReport(void)
 {
-    printf("  TODO houseReport\n");
+    render(-1);
+
+    uint8_t count;
+
+    count = countRoomsWith(BIT_LAMP);
+    printf("Lamps ON: %u/%u ", count, ROOM_COUNT);
+    drawBar(count, ROOM_COUNT, REPORT_BAR_W, C_LAMP);
+    printf("\n");
+
+    count = countRoomsWith(BIT_FAN);
+    printf("Fans ON:  %u/%u ", count, ROOM_COUNT);
+    drawBar(count, ROOM_COUNT, REPORT_BAR_W, C_FAN);
+    printf("\n");
+
+    count = countRoomsWith(BIT_OCCUPIED);
+    printf("Occupied: %u/%u ", count, ROOM_COUNT);
+    drawBar(count, ROOM_COUNT, REPORT_BAR_W, C_OK);
+    printf("\n");
+
+    count = countRoomsWith(BIT_ALARM);
+    printf("Alarms:   %u/%u ", count, ROOM_COUNT);
+    drawBar(count, ROOM_COUNT, REPORT_BAR_W, C_ALARM);
+    printf("\n\n");
+
+    const Room_t *rooms = houseRooms();
+    uint8_t hottestIndex = 0U;
+    uint8_t coldestIndex = 0U;
+
+    for (uint8_t i = 1U; i < ROOM_COUNT; i++)
+    {
+        if (rooms[i].adc > rooms[hottestIndex].adc)
+        {
+            hottestIndex = i;
+        }
+        if (rooms[i].adc < rooms[coldestIndex].adc)
+        {
+            coldestIndex = i;
+        }
+    }
+
+    printf("Hottest room: %s (%u C)\n", rooms[hottestIndex].name,
+           tempC(rooms[hottestIndex].adc));
+    printf("Coldest room: %s (%u C)\n", rooms[coldestIndex].name,
+           tempC(rooms[coldestIndex].adc));
+
+    uint16_t averageAdc = (uint16_t)(sumAdc(rooms, ROOM_COUNT) / ROOM_COUNT);
+    printf("Average temp: %u C\n", tempC(averageAdc));
+
+    pauseKey();
 }
 
 
@@ -283,5 +370,49 @@ void houseReport(void)
  */
 void runAutomation(void)
 {
-    printf("  TODO runAutomation\n");
+    char trace[ROOM_COUNT][96];
+    uint8_t changedCount = 0U;
+
+    render(-1);
+
+    for (uint8_t i = 0U; i < ROOM_COUNT; i++)
+    {
+        Room_t *room = houseRoom(i);
+        uint8_t before = room->status;
+        uint16_t temperature = tempC(room->adc);
+
+        if (!READ_BIT(before, BIT_AUTO))
+        {
+            snprintf(trace[i], sizeof(trace[i]), "%s %u C skipped (MANUAL)",
+                     room->name, temperature);
+        }
+        else
+        {
+            uint8_t changed = applyRules(room);
+            changedCount += changed;
+            uint8_t after = room->status;
+            char beforeBits[9];
+            char afterBits[9];
+
+            for (int bit = 7; bit >= 0; bit--)
+            {
+                beforeBits[7 - bit] = READ_BIT(before, bit) ? '1' : '0';
+                afterBits[7 - bit] = READ_BIT(after, bit) ? '1' : '0';
+            }
+            beforeBits[8] = '\0';
+            afterBits[8] = '\0';
+
+            snprintf(trace[i], sizeof(trace[i]), "%s %u C   0b%s -> 0b%s %s",
+                     room->name, temperature, beforeBits, afterBits,
+                     changed ? "*" : "");
+        }
+    }
+    for (uint8_t i = 0U; i < ROOM_COUNT; i++)
+    {
+        printf("%s\n", trace[i]);
+    }
+    printf("%u room(s) changed.\n", changedCount);
+
+    pauseKey();
 }
+

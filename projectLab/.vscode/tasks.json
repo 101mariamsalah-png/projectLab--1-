@@ -5,6 +5,7 @@
             "label": "build",
             "type": "shell",
             "command": "gcc",
+            "options": { "cwd": "${workspaceFolder}/projectLab" },
             "args": [
                 "-std=c99", "-Wall", "-Wextra", "-Iinclude",
                 "-o", "house.exe",

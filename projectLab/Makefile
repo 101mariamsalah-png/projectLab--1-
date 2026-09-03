@@ -4,7 +4,7 @@
 
 CC      = gcc
 CFLAGS  = -std=c99 -Wall -Wextra -Iinclude
-TARGET  = house
+TARGET  = house.exe
 SRC     = main.c src/house.c src/render.c src/ui.c src/platform.c src/demo.c
 OBJ     = $(SRC:.c=.o)
 
